@@ -1,1 +1,911 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCR GCSE Classical Civilisation — Adaptive Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0b0e; --surface: #141217; --surface2: #1b1820; --surface3: #222028;
+    --border: rgba(255,255,255,0.06); --border2: rgba(255,255,255,0.13);
+    --text: #ede9e0; --text2: #a09880; --text3: #5a5040;
+    --p1: #c9974a; --p1-dim: rgba(201,151,74,0.12); --p1-border: rgba(201,151,74,0.3);
+    --p2: #5a8fa8; --p2-dim: rgba(90,143,168,0.12); --p2-border: rgba(90,143,168,0.3);
+    --green: #5a9e6f; --green-bg: rgba(90,158,111,0.1);
+    --red: #c96060; --red-bg: rgba(201,96,96,0.1);
+    --amber: #c9974a; --amber-bg: rgba(201,151,74,0.1);
+    --radius: 10px; --radius-lg: 16px;
+    --serif: 'Cinzel', serif; --body: 'Crimson Pro', serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--body); font-size: 16px; min-height: 100vh; line-height: 1.65; }
+ 
+  /* Marble texture background */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at 20% 20%, rgba(201,151,74,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(90,143,168,0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+ 
+  #app { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 6rem; position: relative; z-index: 1; }
+ 
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3rem; padding-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); }
+  .logo { font-family: var(--serif); font-size: 12px; letter-spacing: 0.15em; color: var(--text3); text-transform: uppercase; }
+  .logo span { color: var(--text2); }
+  .stats-pill { display: flex; gap: 1.5rem; font-size: 13px; font-family: var(--body); color: var(--text3); }
+  .stats-pill b { color: var(--text2); }
+ 
+  /* SCREENS */
+  .screen { display: none; }
+  .screen.active { display: block; }
+ 
+  /* HOME */
+  .hero { text-align: center; padding: 2rem 0 3rem; }
+  .hero-emblem { font-size: 3rem; margin-bottom: 1rem; }
+  .hero h1 { font-family: var(--serif); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 400; letter-spacing: 0.08em; line-height: 1.3; margin-bottom: 0.75rem; color: var(--text); }
+  .hero h1 em { font-style: italic; color: var(--p1); font-family: 'Crimson Pro', serif; }
+  .hero p { color: var(--text2); font-size: 1.05rem; max-width: 520px; margin: 0 auto 2.5rem; font-style: italic; }
+ 
+  /* PAPER TABS */
+  .paper-tabs { display: flex; gap: 0; margin-bottom: 2.5rem; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .paper-tab { flex: 1; padding: 1rem 1.5rem; cursor: pointer; font-family: var(--serif); font-size: 13px; letter-spacing: 0.1em; text-align: center; transition: all 0.2s; border: none; background: transparent; color: var(--text3); }
+  .paper-tab:first-child { border-right: 0.5px solid var(--border); }
+  .paper-tab.active-p1 { background: var(--p1-dim); color: var(--p1); }
+  .paper-tab.active-p2 { background: var(--p2-dim); color: var(--p2); }
+  .paper-tab:hover:not(.active-p1):not(.active-p2) { background: var(--surface2); color: var(--text2); }
+  .paper-subtitle { font-size: 11px; display: block; margin-top: 3px; font-family: var(--body); font-style: italic; opacity: 0.7; }
+ 
+  /* NAV */
+  .section-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; }
+  .nav-btn { font-size: 12px; padding: 0.35rem 0.85rem; border-radius: 99px; border: 0.5px solid var(--border); background: transparent; color: var(--text3); cursor: pointer; font-family: var(--serif); letter-spacing: 0.05em; transition: all 0.15s; }
+  .nav-btn.active, .nav-btn:hover { background: var(--surface2); color: var(--text2); border-color: var(--border2); }
+ 
+  /* TOPIC GRID */
+  .topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 2rem; }
+  .topic-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem; cursor: pointer; transition: all 0.2s; }
+  .topic-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .topic-card.p1-card:hover { border-color: var(--p1-border); }
+  .topic-card.p2-card:hover { border-color: var(--p2-border); }
+  .topic-card.weak { border-color: rgba(201,96,96,0.3); }
+  .topic-card.strong.p1-card { border-color: rgba(90,158,111,0.25); }
+  .topic-card.strong.p2-card { border-color: rgba(90,158,111,0.25); }
+  .topic-name { font-family: var(--serif); font-size: 12px; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .topic-bar { height: 2px; background: var(--surface3); border-radius: 99px; overflow: hidden; margin-bottom: 5px; }
+  .topic-bar-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+  .topic-meta { font-size: 11px; color: var(--text3); font-style: italic; }
+ 
+  /* CTA */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.65rem 1.5rem; border-radius: var(--radius); border: none; cursor: pointer; font-family: var(--serif); font-size: 13px; letter-spacing: 0.08em; transition: all 0.2s; }
+  .btn-p1 { background: var(--p1); color: #0c0b0e; }
+  .btn-p1:hover { background: #d9a85a; }
+  .btn-p2 { background: var(--p2); color: #0c0b0e; }
+  .btn-p2:hover { background: #6aa0b8; }
+  .btn-ghost { background: var(--surface2); color: var(--text2); border: 0.5px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface3); color: var(--text); }
+  .cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+ 
+  /* MASTERY GRID */
+  .mastery-grid { display: flex; flex-direction: column; gap: 8px; }
+  .mastery-row { display: grid; grid-template-columns: 1fr 2fr auto; align-items: center; gap: 12px; padding: 0.75rem 1rem; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); }
+  .mastery-name { font-family: var(--serif); font-size: 12px; letter-spacing: 0.04em; }
+  .mastery-sub { font-size: 11px; color: var(--text3); font-style: italic; }
+  .mastery-bar { height: 3px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
+  .mastery-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+  .mastery-stars { font-size: 13px; color: var(--text3); }
+  .mastery-stars.mastered { color: var(--p1); }
+ 
+  /* QUIZ SCREEN */
+  .quiz-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; }
+  .progress-track { flex: 1; height: 2px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
+  .progress-fill.p1 { background: var(--p1); }
+  .progress-fill.p2 { background: var(--p2); }
+  .q-count { font-size: 12px; font-family: var(--serif); letter-spacing: 0.05em; color: var(--text3); white-space: nowrap; }
+  .topic-tag { font-size: 11px; font-family: var(--serif); letter-spacing: 0.06em; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+  .topic-tag.p1 { background: var(--p1-dim); color: var(--p1); }
+  .topic-tag.p2 { background: var(--p2-dim); color: var(--p2); }
+ 
+  .q-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 1.25rem; }
+  .q-difficulty { font-size: 11px; color: var(--text3); font-family: var(--serif); letter-spacing: 0.06em; margin-bottom: 0.6rem; text-transform: uppercase; }
+  .q-text { font-size: 1.1rem; line-height: 1.7; color: var(--text); margin-bottom: 1rem; }
+  .q-marks { font-size: 12px; color: var(--p1); font-family: var(--serif); letter-spacing: 0.04em; margin-bottom: 1.25rem; }
+ 
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt { background: var(--surface2); border: 0.5px solid rgba(255,255,255,0.07); border-radius: var(--radius); padding: 0.8rem 1.1rem; cursor: pointer; font-size: 1rem; text-align: left; transition: all 0.15s; display: flex; align-items: flex-start; gap: 10px; color: var(--text); font-family: var(--body); }
+  .opt:hover:not(.locked) { border-color: var(--border2); background: var(--surface3); }
+  .opt.selected { border-color: var(--p1-border); background: var(--p1-dim); }
+  .opt.selected.p2mode { border-color: var(--p2-border); background: var(--p2-dim); }
+  .opt.correct { border-color: rgba(90,158,111,0.5); background: var(--green-bg); color: var(--green); }
+  .opt.wrong { border-color: rgba(201,96,96,0.4); background: var(--red-bg); color: var(--red); }
+  .opt.reveal-correct { border-color: rgba(90,158,111,0.5); background: var(--green-bg); color: var(--green); }
+  .opt-letter { font-family: var(--serif); font-size: 11px; letter-spacing: 0.05em; min-width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; color: var(--text3); }
+ 
+  .answer-reveal { background: var(--surface2); border: 0.5px solid rgba(255,255,255,0.07); border-radius: var(--radius); padding: 1rem 1.25rem; margin-top: 1rem; display: none; }
+  .answer-reveal.show { display: block; }
+  .reveal-label { font-size: 11px; color: var(--text3); font-family: var(--serif); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .reveal-text { font-size: 15px; color: var(--text2); line-height: 1.65; font-style: italic; }
+ 
+  .ai-explanation { border-radius: var(--radius); padding: 1rem 1.25rem; margin-top: 10px; display: none; }
+  .ai-explanation.show { display: block; }
+  .ai-explanation.p1 { background: var(--p1-dim); border: 0.5px solid var(--p1-border); }
+  .ai-explanation.p2 { background: var(--p2-dim); border: 0.5px solid var(--p2-border); }
+  .ai-exp-label { font-size: 11px; font-family: var(--serif); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px; }
+  .ai-exp-label.p1 { color: var(--p1); }
+  .ai-exp-label.p2 { color: var(--p2); }
+  .ai-exp-label::before { content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .ai-exp-text { font-size: 14px; color: var(--text2); line-height: 1.7; }
+  .ai-thinking { display: flex; gap: 4px; align-items: center; }
+  .ai-thinking span { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--p1); animation: pulse 1.2s ease-in-out infinite; }
+  .ai-thinking span:nth-child(2) { animation-delay: 0.2s; }
+  .ai-thinking span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+ 
+  .self-mark { display: none; gap: 10px; margin-top: 1rem; flex-wrap: wrap; }
+  .self-mark.show { display: flex; }
+  .self-mark p { font-size: 14px; color: var(--text2); margin-bottom: 8px; width: 100%; font-style: italic; }
+ 
+  .feedback-bar { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1.25rem; margin-bottom: 1rem; display: none; }
+  .feedback-bar.show { display: flex; align-items: flex-start; gap: 12px; }
+  .feedback-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .feedback-text { font-size: 14px; color: var(--text2); }
+  .feedback-text strong { display: block; margin-bottom: 4px; font-family: var(--serif); letter-spacing: 0.04em; font-size: 13px; }
+ 
+  .action-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 0.75rem; flex-wrap: wrap; }
+ 
+  /* RESULTS */
+  .results-hero { text-align: center; padding: 2rem 0 1.5rem; }
+  .grade-badge { display: inline-flex; align-items: center; justify-content: center; width: 90px; height: 90px; border-radius: 50%; font-family: var(--serif); font-size: 2.5rem; font-weight: 400; margin-bottom: 1.5rem; border: 1px solid; }
+  .results-hero h2 { font-family: var(--serif); font-size: 1.5rem; font-weight: 400; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .results-hero p { color: var(--text2); font-style: italic; }
+ 
+  .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 1.5rem 0; }
+  .score-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+  .score-val { font-size: 2rem; font-weight: 400; font-family: var(--serif); }
+  .score-label { font-size: 11px; color: var(--text3); margin-top: 4px; letter-spacing: 0.05em; text-transform: uppercase; font-family: var(--serif); }
+ 
+  .topic-result { display: grid; grid-template-columns: 1fr 2fr auto; align-items: center; gap: 10px; padding: 0.6rem 0; border-bottom: 0.5px solid var(--border); }
+  .topic-result:last-child { border-bottom: none; }
+  .topic-result-name { font-size: 13px; font-family: var(--serif); letter-spacing: 0.03em; }
+  .topic-result-bar { height: 3px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
+  .topic-result-fill { height: 100%; border-radius: 99px; }
+  .topic-result-pct { font-size: 12px; font-family: var(--serif); text-align: right; }
+ 
+  .weak-notice { background: rgba(201,96,96,0.08); border: 0.5px solid rgba(201,96,96,0.3); border-radius: var(--radius); padding: 0.9rem 1.1rem; margin: 1rem 0; display: none; }
+  .weak-notice p { font-size: 13px; color: var(--red); font-style: italic; }
+ 
+  /* PAPER BADGE on results */
+  .paper-badge { display: inline-block; font-family: var(--serif); font-size: 11px; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 99px; margin-bottom: 0.5rem; }
+  .paper-badge.p1 { background: var(--p1-dim); color: var(--p1); border: 0.5px solid var(--p1-border); }
+  .paper-badge.p2 { background: var(--p2-dim); color: var(--p2); border: 0.5px solid var(--p2-border); }
+ 
+  /* GRADE TABLE */
+  .grade-table-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 1.5rem 0; overflow-x: auto; }
+  .grade-table-wrap h3 { font-family: var(--serif); font-size: 13px; letter-spacing: 0.06em; color: var(--text2); margin-bottom: 1rem; text-transform: uppercase; }
+  .grade-table { width: 100%; border-collapse: collapse; }
+  .grade-table th, .grade-table td { padding: 0.45rem 0.75rem; text-align: center; font-size: 13px; border: 0.5px solid var(--border); }
+  .grade-table th { font-family: var(--serif); font-size: 11px; letter-spacing: 0.06em; color: var(--text3); text-transform: uppercase; }
+  .grade-highlight { font-weight: 600; }
+ 
+  /* CHATBOT */
+  #chat-fab { position: fixed; bottom: 1.5rem; right: 1.5rem; width: 52px; height: 52px; border-radius: 50%; background: var(--surface); border: 0.5px solid var(--border2); color: var(--text); cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; z-index: 100; transition: all 0.2s; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  #chat-fab:hover { border-color: var(--p1); }
+  #chat-window { position: fixed; bottom: 5rem; right: 1.5rem; width: 320px; max-height: 420px; background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); display: none; flex-direction: column; overflow: hidden; z-index: 100; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+  #chat-window.open { display: flex; }
+  .chat-header { padding: 0.85rem 1rem; border-bottom: 0.5px solid var(--border); background: var(--surface2); }
+  .chat-header h4 { font-family: var(--serif); font-size: 12px; letter-spacing: 0.08em; color: var(--text2); text-transform: uppercase; }
+  .chat-header p { font-size: 11px; color: var(--text3); font-style: italic; margin-top: 2px; }
+  #chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .msg { max-width: 85%; padding: 0.6rem 0.85rem; border-radius: 10px; font-size: 13.5px; line-height: 1.55; }
+  .msg-user { background: var(--p1-dim); border: 0.5px solid var(--p1-border); color: var(--text); align-self: flex-end; }
+  .msg-ai { background: var(--surface2); border: 0.5px solid var(--border); color: var(--text2); align-self: flex-start; }
+  .msg-thinking { background: var(--surface2); border: 0.5px solid var(--border); align-self: flex-start; padding: 0.75rem 1rem; border-radius: 10px; }
+  #chat-suggestions { padding: 0 0.75rem 0.5rem; display: flex; flex-wrap: wrap; gap: 5px; }
+  .suggestion { font-size: 11px; padding: 3px 9px; border-radius: 99px; border: 0.5px solid var(--border); background: transparent; color: var(--text3); cursor: pointer; font-family: var(--serif); letter-spacing: 0.03em; transition: all 0.15s; }
+  .suggestion:hover { border-color: var(--p1-border); color: var(--p1); }
+  .chat-input-row { display: flex; gap: 6px; padding: 0.75rem; border-top: 0.5px solid var(--border); }
+  #chat-input { flex: 1; background: var(--surface2); border: 0.5px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: var(--body); font-size: 13px; outline: none; }
+  #chat-input:focus { border-color: var(--border2); }
+  #chat-send { background: var(--p1); border: none; border-radius: 8px; padding: 0.5rem 0.85rem; color: #0c0b0e; cursor: pointer; font-family: var(--serif); font-size: 11px; letter-spacing: 0.05em; transition: background 0.15s; }
+  #chat-send:hover { background: #d9a85a; }
+ 
+  /* DIVIDER */
+  .ornament { text-align: center; color: var(--text3); font-size: 18px; margin: 2rem 0; letter-spacing: 0.3em; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="logo">OCR GCSE <span>Classical Civilisation</span></div>
+    <div class="stats-pill">
+      <span>Session: <b id="hdr-session">0</b></span>
+      <span>Total: <b id="hdr-total">0</b></span>
+      <span>Streak: <b id="hdr-streak">0</b>🔥</span>
+    </div>
+  </div>
+ 
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="hero">
+      <div class="hero-emblem">🏛️</div>
+      <h1>Classical Civilisation<br><em>Adaptive Revision</em></h1>
+      <p>Marylebone Boys' School — GCSE Classical Civilisation quiz covering both examination papers</p>
+    </div>
+ 
+    <!-- Paper tabs -->
+    <div class="paper-tabs">
+      <button class="paper-tab active-p1" onclick="selectPaper('p1',this)">
+        PAPER 1 — MYTH &amp; RELIGION
+        <span class="paper-subtitle">Gods · Heroes · Temples · Festivals · Death</span>
+      </button>
+      <button class="paper-tab" onclick="selectPaper('p2',this)">
+        PAPER 2 — WAR &amp; WARFARE
+        <span class="paper-subtitle">Athens · Sparta · Rome · Battles · Commemoration</span>
+      </button>
+    </div>
+ 
+    <div class="section-nav">
+      <button class="nav-btn active" onclick="showSection('topics',event)">Topics</button>
+      <button class="nav-btn" onclick="showSection('mastery',event)">Mastery</button>
+    </div>
+ 
+    <div id="section-topics">
+      <div id="topic-grid" class="topic-grid"></div>
+      <div class="cta-row">
+        <button class="btn btn-p1" id="btn-start-all" onclick="startQuiz('all')">Start Full Quiz</button>
+        <button class="btn btn-ghost" id="btn-start-weak" onclick="startQuiz('weak')">Drill Weak Areas</button>
+      </div>
+    </div>
+ 
+    <div id="section-mastery" style="display:none">
+      <div id="mastery-grid" class="mastery-grid"></div>
+    </div>
+  </div>
+ 
+  <!-- QUIZ SCREEN -->
+  <div id="screen-quiz" class="screen">
+    <div class="quiz-header">
+      <button class="btn btn-ghost" style="padding:0.4rem 0.75rem;font-size:12px;" onclick="goHome()">← Home</button>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <span class="q-count" id="q-count">1/10</span>
+      <span class="topic-tag" id="topic-tag"></span>
+    </div>
+ 
+    <div id="feedback-bar" class="feedback-bar">
+      <span class="feedback-icon" id="feedback-icon"></span>
+      <div class="feedback-text"><strong id="feedback-title"></strong><span id="feedback-msg"></span></div>
+    </div>
+ 
+    <div class="q-card">
+      <div class="q-difficulty" id="q-difficulty"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="q-marks" id="q-marks"></div>
+      <div class="options" id="options-container"></div>
+      <div class="answer-reveal" id="answer-reveal">
+        <div class="reveal-label">Model Answer</div>
+        <div class="reveal-text" id="reveal-text"></div>
+      </div>
+      <div class="ai-explanation" id="ai-explanation">
+        <div class="ai-exp-label" id="ai-exp-label">Tutor Explanation</div>
+        <div class="ai-exp-text" id="ai-exp-text"><div class="ai-thinking"><span></span><span></span><span></span></div></div>
+      </div>
+      <div class="self-mark" id="self-mark">
+        <p>How did your answer compare?</p>
+        <button class="btn btn-ghost" onclick="selfMark(true)" style="font-size:13px;">✓ Got it</button>
+        <button class="btn btn-ghost" onclick="selfMark(false)" style="font-size:13px;">✗ Missed it</button>
+      </div>
+    </div>
+ 
+    <div class="action-row">
+      <button class="btn btn-ghost" id="btn-explain" onclick="getAIExplanation()" style="display:none">Ask Tutor ✦</button>
+      <button class="btn btn-p1" id="btn-next" onclick="nextQuestion()" style="display:none">Next →</button>
+    </div>
+  </div>
+ 
+  <!-- RESULTS SCREEN -->
+  <div id="screen-results" class="screen">
+    <div class="results-hero">
+      <div id="paper-result-badge" class="paper-badge p1"></div>
+      <div class="grade-badge" id="grade-badge"></div>
+      <h2 id="results-title"></h2>
+      <p id="results-sub"></p>
+    </div>
+ 
+    <div class="score-grid">
+      <div class="score-card">
+        <div class="score-val" id="res-correct"></div>
+        <div class="score-label">Correct</div>
+      </div>
+      <div class="score-card">
+        <div class="score-val" id="res-pct"></div>
+        <div class="score-label">Score</div>
+      </div>
+      <div class="score-card">
+        <div class="score-val" id="res-streak"></div>
+        <div class="score-label">Best Streak</div>
+      </div>
+    </div>
+ 
+    <div class="grade-table-wrap">
+      <h3>OCR Grade Boundaries (approx.)</h3>
+      <table class="grade-table" id="grade-table">
+        <thead><tr><th>Grade</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>U</th></tr></thead>
+        <tbody><tr><td>Min %</td><td>87</td><td>78</td><td>69</td><td>61</td><td>53</td><td>45</td><td>34</td><td>&lt;34</td></tr></tbody>
+      </table>
+    </div>
+ 
+    <div class="weak-notice" id="weak-notice">
+      <p id="weak-notice-text"></p>
+    </div>
+ 
+    <div class="ornament">✦ ✦ ✦</div>
+    <div id="topic-breakdown" style="margin-bottom:1.5rem;"></div>
+ 
+    <div class="cta-row">
+      <button class="btn btn-p1" id="btn-again" onclick="startQuiz('all')">Quiz Again</button>
+      <button class="btn btn-ghost" onclick="startQuiz('weak')">Drill Weak Areas</button>
+      <button class="btn btn-ghost" onclick="goHome()">Home</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- CHATBOT -->
+<div id="chat-window">
+  <div class="chat-header">
+    <h4>✦ Classics Tutor</h4>
+    <p>Ask anything about Classical Civilisation</p>
+  </div>
+  <div id="chat-messages"></div>
+  <div id="chat-suggestions">
+    <button class="suggestion" onclick="sendSuggestion(this)">What are the 12 Labours?</button>
+    <button class="suggestion" onclick="sendSuggestion(this)">Battle of Salamis</button>
+    <button class="suggestion" onclick="sendSuggestion(this)">Spartan agoge</button>
+    <button class="suggestion" onclick="sendSuggestion(this)">Ara Pacis</button>
+  </div>
+  <div class="chat-input-row">
+    <input id="chat-input" type="text" placeholder="Ask your tutor…" onkeydown="if(event.key==='Enter')sendChat()">
+    <button id="chat-send" onclick="sendChat()">Send</button>
+  </div>
+</div>
+<button id="chat-fab" onclick="toggleChat()">⚡</button>
+ 
+<script>
+// ══════════════════════════════════════════
+// DATA — PAPER 1: MYTH & RELIGION
+// ══════════════════════════════════════════
+const P1_TOPICS = {
+  gods: 'Greek & Roman Gods',
+  heracles_gr: 'Heracles in Greece',
+  heracles_ro: 'Hercules in Rome',
+  temples: 'Temples',
+  priests: 'Priests & Sacrifice',
+  foundation_gr: 'Foundation Myths — Greece',
+  foundation_ro: 'Foundation Myths — Rome',
+  plutarch: 'Plutarch: Theseus vs Romulus',
+  festivals_gr: 'Greek Festivals',
+  festivals_ro: 'Roman Festivals',
+  power: 'Myths & Symbols of Power',
+  death: 'Death & Burial',
+  underworld: 'Journeys to the Underworld',
+};
+ 
+const P1_QUESTIONS = [
+  // GODS
+  {topic:'gods',paper:'p1',difficulty:'Foundation',marks:1,text:'What is the Greek name of the god of the sea?',type:'mcq',options:['Poseidon','Hades','Ares','Dionysus'],correct:0,explanation:'Poseidon (Roman: Neptune) is the god of the sea, horses, and earthquakes. He carries a trident and is often depicted as bearded.'},
+  {topic:'gods',paper:'p1',difficulty:'Foundation',marks:1,text:'Which goddess is associated with wisdom and warfare strategy?',type:'mcq',options:['Hera','Aphrodite','Athena','Artemis'],correct:2,explanation:'Athena (Roman: Minerva) is the goddess of wisdom and warfare strategy. She wears armour and carries a spear and shield, and wears the aegis — a breastplate made from the skin of a gorgon.'},
+  {topic:'gods',paper:'p1',difficulty:'Foundation',marks:1,text:'What is the Roman equivalent of Dionysus?',type:'mcq',options:['Vulcan','Bacchus','Mercury','Pluto'],correct:1,explanation:'Bacchus is the Roman equivalent of Dionysus, god of wine, theatre and parties. He is depicted with a thyrsus (plant staff), wine cup and ivy vine leaves.'},
+  {topic:'gods',paper:'p1',difficulty:'Foundation',marks:1,text:'Which god is associated with the caduceus (winged staff) and guides spirits to the underworld?',type:'mcq',options:['Apollo','Ares','Hermes','Hephaestus'],correct:2,explanation:'Hermes (Roman: Mercury) is the messenger god who also guides spirits to the underworld. He carries the caduceus and wears winged shoes and a winged hat.'},
+  {topic:'gods',paper:'p1',difficulty:'Higher',marks:2,text:'Explain two symbols associated with Zeus and what they represent.',type:'short',modelAnswer:'Zeus carries a thunderbolt, representing his power over lightning and the sky; and a sceptre (royal staff) showing his authority as king of the gods. He is also depicted as bearded and seated on a throne.',explanation:'Zeus (Jupiter) rules the sky and thunder. His symbols show both his power over natural forces and his status as king of the Olympians.'},
+ 
+  // HERACLES GREECE
+  {topic:'heracles_gr',paper:'p1',difficulty:'Foundation',marks:1,text:'Why did Heracles have to complete his 12 labours?',type:'mcq',options:['To win Deianira\'s hand','As punishment for killing his wife and children','To earn a place on Olympus','Because King Minos demanded it'],correct:1,explanation:'Hera drove Heracles into a madness causing him to kill his wife Megara and children. He consulted the Pythia at Delphi who told him to serve King Eurystheus for 12 years and complete 10 labours (which became 12).'},
+  {topic:'heracles_gr',paper:'p1',difficulty:'Foundation',marks:1,text:'Which goddess acted as Heracles\' protector after Alcmene tried to abandon him?',type:'mcq',options:['Hera','Aphrodite','Artemis','Athena'],correct:3,explanation:'Athena rescued the abandoned infant Heracles and took on the role of his protector throughout his life. She appears in several of his labours, such as the Stymphalian Birds.'},
+  {topic:'heracles_gr',paper:'p1',difficulty:'Foundation',marks:1,text:'In which labour did Heracles divert two rivers to clean filthy stables in a single day?',type:'mcq',options:['3rd — Golden Hind','5th — Augean Stables','7th — Cretan Bull','9th — Belt of Hippolyta'],correct:1,explanation:'The 5th Labour was the Augean Stables. Heracles redirected the rivers Alpheios and Peneios through the stables to clean them in one day.'},
+  {topic:'heracles_gr',paper:'p1',difficulty:'Higher',marks:2,text:'Where were the 12 Labours of Heracles depicted and where were they placed on the building?',type:'short',modelAnswer:'The 12 Labours were depicted on metopes (large square marble panels) on the Temple of Zeus at Olympia. Six labours were placed on metopes below the pediment at the front and six at the back of the temple.',explanation:'The metopes were very prominent, placed at the front and rear of the temple where all visitors would see them, linking Heracles to Zeus and inspiring those attending the Olympic Games.'},
+  {topic:'heracles_gr',paper:'p1',difficulty:'Higher',marks:3,text:'What are the three criteria a sculptor had to consider when carving a metope? Give an example for each.',type:'short',modelAnswer:'1. Create a recognisable scene — e.g. Heracles holds his club even if he strangled the bull, to be identifiable. 2. Create realism — e.g. bodies in correct proportion, muscles reacting to movement. 3. Fill the space — e.g. using diagonal lines between characters to fill corners, or a raised club to fill the top left space.',explanation:'Sculptors had to balance storytelling clarity, anatomical realism, and good composition within the fixed square shape of a metope.'},
+ 
+  // HERACLES ROME
+  {topic:'heracles_ro',paper:'p1',difficulty:'Foundation',marks:1,text:'Who wrote the story of Hercules and Cacus?',type:'mcq',options:['Ovid','Livy','Virgil','Plutarch'],correct:2,explanation:'Virgil wrote about Hercules and Cacus in the Aeneid (pages 13-17 of the literature booklet). Cacus was a fire-breathing monster who stole Hercules\' cattle while he stayed with King Evander at Pallantium.'},
+  {topic:'heracles_ro',paper:'p1',difficulty:'Foundation',marks:1,text:'How did Hercules kill Nessus the centaur?',type:'mcq',options:['Strangled him','Stabbed with a sword','Shot with a hydra-venom arrow','Drowned him in the river'],correct:2,explanation:'Hercules shot Nessus with a single arrow dipped in the Hydra\'s venom. Before dying, Nessus gave Deianira his blood-soaked shirt, falsely claiming it could revive love — this later caused Hercules\' death.'},
+  {topic:'heracles_ro',paper:'p1',difficulty:'Higher',marks:2,text:'Explain how Hercules\' death was caused partly by his own earlier actions.',type:'short',modelAnswer:'Years earlier, Hercules had dipped his arrows in the Hydra\'s poisonous blood. When Nessus was shot with one of these arrows, the Hydra\'s venom was in the blood on Nessus\' shirt. When Deianira sent Hercules the shirt, the Hydra\'s venom burned through his flesh and killed him.',explanation:'This links the Lernean Hydra labour directly to his death — his own weapon became his undoing through a chain of events spanning his whole life.'},
+ 
+  // TEMPLES
+  {topic:'temples',paper:'p1',difficulty:'Foundation',marks:1,text:'What was kept in the opisthodomos of a Greek temple?',type:'mcq',options:['The cult statue','The altar','Treasures of the sanctuary','The priests\' quarters'],correct:2,explanation:'The opisthodomos was the back room of a Greek temple used to store the treasures of the sanctuary. The cult statue stood in the naos/cella (central room) and the altar was outside.'},
+  {topic:'temples',paper:'p1',difficulty:'Foundation',marks:1,text:'What makes the Pantheon architecturally unique among Roman temples?',type:'mcq',options:['It has the most columns','It is the oldest temple in Rome','It is a rotunda with a dome and oculus','It has no altar at all'],correct:2,explanation:'The Pantheon is special for its rotunda shape (round building with a dome) and the oculus — a circular opening at the top of the dome that allows light in. It was dedicated to all gods.'},
+  {topic:'temples',paper:'p1',difficulty:'Higher',marks:2,text:'Give two differences between a Greek temple and a Roman temple.',type:'short',modelAnswer:'1. Greek temples have steps all the way around and can be entered from all sides; Roman temples stand on a taller podium with steps only at the front. 2. Greek temples have freestanding columns all around the cella; Roman temples have engaged columns (attached to walls) around the sides and back, purely decorative.',explanation:'These differences reflect the different religious practices — Roman temples emphasised a single frontal approach, making the entrance more monumental.'},
+  {topic:'temples',paper:'p1',difficulty:'Higher',marks:4,text:'How did the Parthenon honour the goddess Athena? Give four examples.',type:'short',modelAnswer:'1. A 12-metre chryselephantine (gold and ivory) cult statue of Athena stood inside the naos. 2. The east pediment showed the birth of Athena from Zeus\' head. 3. The west pediment showed Athena competing with Poseidon for patronage of Athens. 4. The Ionic frieze showed the Panathenaic procession bringing Athena her new dress (peplos). Additionally, metopes showed the Amazonomachy, Centauromachy, Gigantomachy and sack of Troy — all myths linked to Athenian identity and Athena\'s protection.',explanation:'The Parthenon was the most decorated temple in the Greek world, every surface reflecting Athena\'s importance to Athens.'},
+ 
+  // PRIESTS & SACRIFICE
+  {topic:'priests',paper:'p1',difficulty:'Foundation',marks:1,text:'What was the role of a Haruspex in Roman sacrifice?',type:'mcq',options:['They struck the sacrificial animal','They slit the animal\'s throat','They read omens from the animal\'s entrails','They maintained the sacred fire'],correct:2,explanation:'The Haruspex was a Roman priest who read omens from the entrails of sacrificed animals, with the liver being the most important organ to inspect. They used bronze models of livers as tools.'},
+  {topic:'priests',paper:'p1',difficulty:'Foundation',marks:1,text:'How long did Vestal Virgins serve?',type:'mcq',options:['10 years','20 years','30 years','For life'],correct:2,explanation:'Vestal Virgins served for 30 years, selected from noble families between ages 6-10. They maintained the flame of Vesta, made mola salsa, guarded important documents and performed sacrifices.'},
+  {topic:'priests',paper:'p1',difficulty:'Higher',marks:3,text:'Explain three purposes of animal sacrifice in ancient Greece.',type:'short',modelAnswer:'1. Reciprocal relationship — Greeks offered sacrifices as gifts in return for favours from the gods. 2. Communal feasting — meat was shared after sacrifice, providing a rare treat since Greeks rarely ate meat. 3. Community unity — the sacrifice brought people together for a religious purpose, strengthening social bonds.',explanation:'Sacrifice served religious, social and economic purposes simultaneously — it was not just worship but a key moment of community life.'},
+ 
+  // FOUNDATION MYTHS GREECE
+  {topic:'foundation_gr',paper:'p1',difficulty:'Foundation',marks:1,text:'Why did Athena win the contest to be patron of Athens?',type:'mcq',options:['Her gift of a horse was more useful','She bribed the judges','Her olive tree was more useful to Athenian life than Poseidon\'s salt spring','She was a more powerful god than Poseidon'],correct:2,explanation:'Athena planted an olive tree; Poseidon struck the ground with his trident to create a spring of salt water. Athena won because her gift — olive oil — was essential to Athenian life for cooking, cleaning and trade, whereas the salt water was unusable.'},
+  {topic:'foundation_gr',paper:'p1',difficulty:'Foundation',marks:1,text:'Which artist painted the Theseus Kylix (c.440-430 BC)?',type:'mcq',options:['Phidias','Libon','Kodros Painter','Triptolemos Painter'],correct:2,explanation:'The kylix depicting the labours of Theseus was painted by the Kodros Painter around 440-430 BC. The Minotaur is shown in the centre and the other six labours around the outside of the cup.'},
+  {topic:'foundation_gr',paper:'p1',difficulty:'Higher',marks:2,text:'Explain two achievements of Theseus as king of Athens.',type:'short',modelAnswer:'1. He united the warring towns of Attica into one force allegiant to Athens, destroying individual town halls and building one central council chamber. 2. He promised citizens democracy where all men were equal and could vote for their leaders. He also founded the Panathenaic Games to unite the tribes through sport rather than warfare.',explanation:'Theseus is important not just as a hero but as the founder of Athenian democracy and unity.'},
+ 
+  // FOUNDATION MYTHS ROME
+  {topic:'foundation_ro',paper:'p1',difficulty:'Foundation',marks:1,text:'Who is the author of the foundation stories of Rome featuring Aeneas and Romulus and Remus?',type:'mcq',options:['Ovid','Virgil','Plutarch','Livy'],correct:3,explanation:'Livy wrote The History of Rome, beginning with the mythical foundation stories. He himself admitted giving a fully factual account would be too difficult and gave the most truthful account he could.'},
+  {topic:'foundation_ro',paper:'p1',difficulty:'Foundation',marks:1,text:'How did Romulus and Remus survive after being exposed on the banks of the River Tiber?',type:'mcq',options:['They were found by a fisherman','They were cared for by a she-wolf then a farmer','They swam to safety','Amulius relented and rescued them'],correct:1,explanation:'The twins were found and suckled by a she-wolf before being raised by a farmer. The she-wolf is central to the Roman foundation myth and links back to Lupercalia (the wolf cave on the Palatine Hill).'},
+  {topic:'foundation_ro',paper:'p1',difficulty:'Higher',marks:2,text:'Explain two reasons why the story of Aeneas was important to the Romans.',type:'short',modelAnswer:'1. It links Rome to the great epic mythology of Homer\'s Iliad, giving Rome a heroic, divine origin story connected to the Trojan War. 2. Aeneas was the child of Venus (goddess), making Rome\'s founder semi-divine; Augustus claimed descent from Aeneas to legitimise his rule. It also shows Roman virtues like pietas through Aeneas\' loyalty to family and city.',explanation:'Foundation myths served political purposes — Augustus actively promoted the Aeneas story to strengthen his claim to power.'},
+ 
+  // PLUTARCH
+  {topic:'plutarch',paper:'p1',difficulty:'Higher',marks:2,text:'According to Plutarch, what was the main difference between how Theseus and Romulus performed their great deeds?',type:'short',modelAnswer:'Plutarch argues that Theseus performed his deeds because he was born into power and desired to do great things for others (e.g. defeating local tyrants, killing the Minotaur to end Athenian sacrifice). Romulus was motivated by the need to overcome his difficult situation of exile and acted largely for his own gain and self-preservation.',explanation:'Plutarch concludes Theseus was "the best of men" as his deeds were not only greater but more heroic in intention.'},
+ 
+  // GREEK FESTIVALS
+  {topic:'festivals_gr',paper:'p1',difficulty:'Foundation',marks:1,text:'Who was in charge of the City Dionysia festival?',type:'mcq',options:['The Pontifex Maximus','The ten generals','Athens\' eponymous archon','The hiereus of Dionysus'],correct:2,explanation:'The eponymous archon — an important democratically elected city official — was in charge of proceedings at the City Dionysia, selecting the playwrights for the year\'s comedies and tragedies.'},
+  {topic:'festivals_gr',paper:'p1',difficulty:'Foundation',marks:1,text:'What prize did winners receive at the Great Panathenaia athletics?',type:'mcq',options:['A laurel wreath','A golden statue','Panathenaic amphorae filled with olive oil','A bronze tripod'],correct:2,explanation:'Winners at the Great Panathenaia received Panathenaic amphorae — special decorated storage jars filled with olive oil. One side showed Athena, the other the contest won.'},
+  {topic:'festivals_gr',paper:'p1',difficulty:'Higher',marks:3,text:'Describe the Pompe on Day 1 of the City Dionysia.',type:'short',modelAnswer:'The Pompe was a grand procession through the streets of Athens. It was accompanied by the wooden cult statue of Dionysus carried on a boat on wheels, recognising the city\'s naval power. The atmosphere was carnival-like, with singing, dancing, music and drinking. Participants also carried model phalluses in recognition of Dionysus as a god of fertility.',explanation:'The Pompe set the tone for the whole festival — it was public, celebratory and involved the whole city.'},
+ 
+  // ROMAN FESTIVALS
+  {topic:'festivals_ro',paper:'p1',difficulty:'Foundation',marks:1,text:'In the Lupercalia, what did the Luperci do with strips of animal skin during the race?',type:'mcq',options:['Decorated the altar with them','Wore them as full body armour','Whipped spectators to give them fertility','Burned them as offerings'],correct:2,explanation:'The Luperci ran nearly naked around the foot of the Palatine Hill, whipping spectators with leather strips (called thongs) cut from the sacrificed animals. Being struck was believed to increase fertility.'},
+  {topic:'festivals_ro',paper:'p1',difficulty:'Higher',marks:2,text:'Explain two ways the Saturnalia showed that Roman society was temporarily turned upside down.',type:'short',modelAnswer:'1. Slaves and masters ate together and were treated as equals during the festival — normal social hierarchy was suspended. 2. Citizens removed their togas and wore party dress instead of their usual formal clothing. Everyone exchanged gifts and visited neighbours as social equals.',explanation:'The Saturnalia\'s reversal of roles celebrated the mythical golden age when Saturn ruled and gods and men lived as equals.'},
+ 
+  // POWER
+  {topic:'power',paper:'p1',difficulty:'Foundation',marks:1,text:'What battle is depicted on the west pediment of the Temple of Zeus at Olympia?',type:'mcq',options:['The Amazonomachy','The Gigantomachy','The Centauromachy','The Trojan War'],correct:2,explanation:'The west pediment of the Temple of Zeus at Olympia shows the Centauromachy — the battle between the Lapiths and Centaurs. It symbolised Greek civilisation triumphing over barbarism, especially referencing the Persian Wars.'},
+  {topic:'power',paper:'p1',difficulty:'Higher',marks:3,text:'Explain how the Prima Porta statue of Augustus shows his power. Give three details.',type:'short',modelAnswer:'1. His right arm is raised in the pose of a general addressing his army, showing military authority. 2. The breastplate shows the return of Roman standards lost to the Parthians, demonstrating diplomatic/military success. 3. The Cupid figure at his feet links him to Venus (mother of Aeneas), establishing divine ancestry. Additional: he is barefoot (like a god), depicted as youthful even when middle-aged, and the breastplate shows gods like Apollo and Artemis endorsing his reign.',explanation:'Every detail of the statue was designed to convey Augustus\' power, divine connections and military success simultaneously.'},
+ 
+  // DEATH & BURIAL
+  {topic:'death',paper:'p1',difficulty:'Foundation',marks:1,text:'What was the prothesis in Greek burial practice?',type:'mcq',options:['The funerary procession','The coin placed on the mouth','Laying out the body for two days to receive mourners','The sacrifice after burial'],correct:2,explanation:'The prothesis was when the prepared and wrapped body was laid out for two days for friends and relatives to pay their respects. A bowl of water was placed outside as visitors were considered polluted by contact with the dead.'},
+  {topic:'death',paper:'p1',difficulty:'Foundation',marks:1,text:'What were funeral clubs (collegia) in Rome?',type:'mcq',options:['Clubs for gladiator fans','Social clubs that members paid into monthly to fund funerals','Religious groups who performed last rites','Aristocratic burial societies for senators only'],correct:1,explanation:'Funeral clubs were social clubs open to less wealthy Romans. Members paid monthly fees; when a member died, the club paid for their funeral and provided mourners. Members also met regularly for meals and networking.'},
+  {topic:'death',paper:'p1',difficulty:'Higher',marks:2,text:'Explain the significance of the Parentalia festival to the Romans.',type:'short',modelAnswer:'Parentalia was a 9-day festival (13th-21st February) during which Romans visited the tombs of their deceased family members and left offerings. No marriages, temple visits or official business could take place, showing how important honouring the dead was. On the 9th day families met for a shared meal. It also allowed people to make amends for any wrongs done.',explanation:'The Parentalia shows the central importance of ancestor veneration in Roman religious life — failure to honour the Manes (deified ancestors) was considered dangerous.'},
+ 
+  // UNDERWORLD
+  {topic:'underworld',paper:'p1',difficulty:'Foundation',marks:1,text:'In the Homeric Hymn to Demeter, why did Persephone have to spend a third of the year in the Underworld?',type:'mcq',options:['As punishment for picking the flower','Because Hades tricked her with a pomegranate seed','Because Zeus commanded it','Because Hermes could not carry her out'],correct:1,explanation:'Before Persephone left the Underworld, Hades gave her a pomegranate seed which she ate. Eating food in the Underworld bound her to it. Demeter ruled she must spend a third of each year with Hades — explaining winter, when Demeter mourns and nothing grows.'},
+  {topic:'underworld',paper:'p1',difficulty:'Higher',marks:2,text:'Explain how Orpheus was able to persuade Pluto to return Eurydice.',type:'short',modelAnswer:'Orpheus\' singing was so extraordinarily beautiful that even those suffering eternal punishments in the Underworld stopped to listen (e.g. Tantalus didn\'t reach for water, Ixion\'s wheel was stilled). Pluto and Proserpina were so moved by his music and his argument that it was unfair for Eurydice\'s life to be cut short, that they agreed to release her on condition he didn\'t look back before leaving.',explanation:'The power of Orpheus\' music is central to the myth — it demonstrates that even the gods of the Underworld could be moved by beauty and a compelling argument.'},
+];
+ 
+// ══════════════════════════════════════════
+// DATA — PAPER 2: WAR & WARFARE
+// ══════════════════════════════════════════
+const P2_TOPICS = {
+  athens_org: 'Athenian Army & Navy',
+  salamis: 'Battle of Salamis',
+  sparta_soc: 'Spartan Society',
+  sparta_army: 'Spartan Army',
+  thermopylae: 'Battle of Thermopylae',
+  actium: 'Battle of Actium',
+  commemoration: 'Commemoration',
+  trajan: 'Trajan & the Dacians',
+  sources: 'Prescribed Visual Sources',
+};
+ 
+const P2_QUESTIONS = [
+  // ATHENIAN ARMY & NAVY
+  {topic:'athens_org',paper:'p2',difficulty:'Foundation',marks:1,text:'What was a trierarch in Athens?',type:'mcq',options:['The commander of a regiment','A wealthy citizen who funded a trireme for a year','A professional naval rower','An elected general'],correct:1,explanation:'A trierarch was a wealthy citizen who donated money to fund and maintain a trireme and its crew for an entire year. This was a liturgy (type of tax on the wealthy) that also conferred social status.'},
+  {topic:'athens_org',paper:'p2',difficulty:'Foundation',marks:1,text:'How many oarsmen rowed each trireme?',type:'mcq',options:['100','130','170','200'],correct:2,explanation:'Each trireme was rowed by 170 men — 27 on each side of the bottom two rows and 31 on the upper row. There were also 30 additional crew members including marines, archers, a piper, steersman and quartermaster.'},
+  {topic:'athens_org',paper:'p2',difficulty:'Foundation',marks:1,text:'What was the diekplous naval tactic?',type:'mcq',options:['Ramming head-on at speed','Circling the enemy fleet','Sailing through a gap in enemy lines and ramming from the rear','Boarding enemy ships and fighting with marines'],correct:2,explanation:'The diekplous involved sailing through a gap in the enemy\'s line, then turning at speed to ram the side of an enemy ship from the rear. It required great skill and was the Athenians\' favoured tactic.'},
+  {topic:'athens_org',paper:'p2',difficulty:'Higher',marks:2,text:'Explain how Athenian military success strengthened democracy.',type:'short',modelAnswer:'The victory at Marathon (490 BC) was won largely by middle-class hoplites, who gained greater political confidence in the new democracy. The victory at Salamis (480 BC) was won by the lower classes who rowed the triremes, showing that even the poorest citizens could decide the fate of Greece — further strengthening democratic ideals by proving all classes could contribute to Athens\' success.',explanation:'Military service was directly linked to citizenship and political rights, so success by all social classes legitimised democratic participation.'},
+ 
+  // SALAMIS
+  {topic:'salamis',paper:'p2',difficulty:'Foundation',marks:1,text:'How did Themistocles force the Greeks to fight at Salamis rather than retreat?',type:'mcq',options:['He secretly moved the Greek fleet at night','He sent a slave to trick Xerxes into attacking and sending ships to block the Greek escape','He threatened to surrender Athens to Persia','He bribed the Persian commanders'],correct:1,explanation:'Themistocles sent a slave to Xerxes pretending to defect, telling him to attack and block Greek retreat. This forced the Greeks to fight in the narrow waters where Themistocles knew they had an advantage — a brilliant double-agent strategy.'},
+  {topic:'salamis',paper:'p2',difficulty:'Foundation',marks:1,text:'Why did the narrow waters of Salamis give the Greeks an advantage?',type:'mcq',options:['The Persians had weaker ships there','The Greeks could use the wind to speed up','The large Persian fleet got in its own way in the confined space','The water was too shallow for Persian ships'],correct:2,explanation:'The Persians\' numerical advantage worked against them in the narrow strait — their ships became crowded and unable to manoeuvre. The Greeks, with fewer but more agile ships, were able to ram the stuck Persian ships.'},
+  {topic:'salamis',paper:'p2',difficulty:'Foundation',marks:1,text:'Who was Artemisia at the battle of Salamis?',type:'mcq',options:['An Athenian spy who betrayed Greece','A Spartan princess who fought alongside Leonidas','The queen of Halicarnassus who fought for the Persians','Xerxes\' wife who watched from the shore'],correct:2,explanation:'Artemisia was the queen of the Greek city of Halicarnassus (which fought for Persia). She argued against fighting in the narrow waters of Salamis — correctly predicting disaster. She lost the argument and the Persians lost the battle.'},
+  {topic:'salamis',paper:'p2',difficulty:'Higher',marks:3,text:'Explain the significance of the Athenian victory at Salamis. Give three points.',type:'short',modelAnswer:'1. It ended the Persian naval threat and forced Xerxes to return to Persia. 2. It established Athenian naval dominance in the Mediterranean, allowing control of key trade routes especially for grain, bringing great wealth. 3. It strengthened Athenian democracy, showing all social classes could defend Greece — the lower classes who rowed the triremes proved as vital as the wealthy hoplites. This wealth funded great building projects like the Parthenon.',explanation:'Salamis transformed Athens into the leading Greek city-state and enabled the Golden Age of Athens.'},
+ 
+  // SPARTAN SOCIETY
+  {topic:'sparta_soc',paper:'p2',difficulty:'Foundation',marks:1,text:'Who were the Helots in Spartan society?',type:'mcq',options:['Spartan soldiers in training','Traders and craftsmen on the outskirts of Sparta','A conquered slave population who farmed Spartan land','Perioeci who served in the army'],correct:2,explanation:'The Helots were a native community conquered by the Spartans and made to farm the land. Their labour gave Spartan citizens the freedom to train full time as soldiers, which was the foundation of Spartan military strength.'},
+  {topic:'sparta_soc',paper:'p2',difficulty:'Foundation',marks:1,text:'At what age did Spartan boys begin the agoge?',type:'mcq',options:['5','7','10','12'],correct:1,explanation:'Spartan boys entered the agoge (military school) at age 7. Training was deliberately harsh — they wore only one cloak, ran barefoot on rough ground, and were subjected to physical challenges to produce the hardest possible soldiers.'},
+  {topic:'sparta_soc',paper:'p2',difficulty:'Higher',marks:2,text:'Explain how the syssitia strengthened the Spartan army.',type:'short',modelAnswer:'The syssitia were dining clubs of about 30 men who ate and lived together both in war and peace. Because men of all ages dined together daily, they built strong bonds of trust and unity. When fighting, these men formed the same unit — they knew each other intimately, trusted one another completely, and had sworn oaths of loyalty, making them far more effective in the phalanx than soldiers who had never trained together.',explanation:'The syssitia created the social glue of the Spartan army — mutual trust was essential for the phalanx formation.'},
+ 
+  // SPARTAN ARMY
+  {topic:'sparta_army',paper:'p2',difficulty:'Foundation',marks:1,text:'What distinctive marking appeared on the shields of Spartan hoplites?',type:'mcq',options:['An owl (symbol of Athena)','A Λ (lambda) shape','A Gorgon\'s head','A horse'],correct:1,explanation:'Spartan shields bore a Λ (lambda) symbol — Λ for Lacedaemon (Sparta\'s official name). This made Spartan warriors instantly recognisable in battle and on artworks.'},
+  {topic:'sparta_army',paper:'p2',difficulty:'Higher',marks:2,text:'Explain why the Spartans were considered the best users of the phalanx formation.',type:'short',modelAnswer:'The phalanx required each soldier to protect the man on their left with their shield while relying on the man on their right to protect them. This demanded absolute trust and identical training. Spartans had this through years of agoge training (identical rigorous preparation) and the syssitia system (years eating and living together). No other Greek state could match this level of trust and coordination.',explanation:'The phalanx\'s effectiveness depended entirely on whether soldiers would hold the line under pressure — Spartan training and culture ensured they would.'},
+  {topic:'sparta_army',paper:'p2',difficulty:'Higher',marks:2,text:'Explain how the roles of the Perioeci and Helots differed in the Spartan army.',type:'short',modelAnswer:'Perioeci served as hoplite fighters alongside Spartan citizens and also worked as craftsmen repairing weapons. Helots served as light-armed troops and as support staff — carrying equipment, cooking and running errands for their Spartan owners. Helots vastly outnumbered citizens (at Plataea: 5,000 Spartans, 5,000 Perioeci, 35,000 Helots), making them essential but also a potential threat that Spartans carefully watched.',explanation:'The Spartan army\'s size depended heavily on non-citizens — it was never just 300 or even a few thousand Spartans.'},
+ 
+  // THERMOPYLAE
+  {topic:'thermopylae',paper:'p2',difficulty:'Foundation',marks:1,text:'Who betrayed the Greek position at Thermopylae by revealing a secret mountain path to the Persians?',type:'mcq',options:['Demaratus','Ephialtes','Dienekes','A Helot spy'],correct:1,explanation:'Ephialtes was a local Greek man who told Xerxes about a mountain path that allowed Persian forces to flank the Greeks and trap them. This treachery forced Leonidas to dismiss his allies and make his last stand with only 300 Spartans.'},
+  {topic:'thermopylae',paper:'p2',difficulty:'Foundation',marks:1,text:'What was Dienekes famous for saying before the battle of Thermopylae?',type:'mcq',options:['Come and take them','Return with your shield, or on it','If the Persians hide the sun, we shall have our battle in the shade','I have come not to talk but to fight'],correct:2,explanation:'Dienekes, one of the 300 Spartans, said: "If the Persians hide the sun, we shall have our battle in the shade." This became one of the most famous expressions of Spartan courage — turning the overwhelming Persian numbers into a joke.'},
+  {topic:'thermopylae',paper:'p2',difficulty:'Higher',marks:3,text:'Explain why Thermopylae was significant despite being a defeat for the Greeks.',type:'short',modelAnswer:'1. The Spartans\' courage and skill in holding off the vast Persian army until betrayed showed the world the quality of Spartan fighting. 2. The sacrifice of the 300 Spartans became a symbol of bravery and Spartan military ideals, inspiring all of Greece. 3. It bought time for the rest of Greece to prepare. A memorial at the battlefield read: "Go tell the Spartans, you who read, we took their orders, and here lie dead." Their sacrifice was commemorated across Greece and remains celebrated in modern culture.',explanation:'Thermopylae turned a military defeat into a moral victory that defined Spartan identity for centuries.'},
+ 
+  // ACTIUM
+  {topic:'actium',paper:'p2',difficulty:'Foundation',marks:1,text:'Who was Marcus Agrippa at the battle of Actium?',type:'mcq',options:['Mark Antony\'s second-in-command','A Ptolemaic naval commander','Octavian\'s trusted general who commanded the left flank','The captain of Cleopatra\'s Egyptian fleet'],correct:2,explanation:'Marcus Agrippa was Octavian\'s most trusted general. He commanded the left flank of Octavian\'s fleet at Actium. Mark Antony placed himself against Agrippa on the right flank, showing how highly Antony regarded Agrippa as a threat.'},
+  {topic:'actium',paper:'p2',difficulty:'Foundation',marks:1,text:'How did Octavian use propaganda against Mark Antony before Actium?',type:'mcq',options:['He forged letters from Cleopatra','He claimed Mark Antony had given Roman territories to Egypt','He said Mark Antony had converted to the Egyptian religion','He published Mark Antony\'s military failures'],correct:1,explanation:'Octavian portrayed Mark Antony as someone who had fallen completely for Cleopatra and would hand over control of Rome to Egypt. He also produced a supposed will of Mark Antony bequeathing his Roman possessions to Cleopatra, turning Roman public opinion against him.'},
+  {topic:'actium',paper:'p2',difficulty:'Higher',marks:3,text:'Explain the significance of the battle of Actium for Rome\'s political system.',type:'short',modelAnswer:'Actium was a turning point from Republic to Empire. With no rival powerful enough to challenge him, Octavian controlled all Roman armies. While he made a show of returning power to the Senate, he dominated it from his special throne and promoted his allies into it. The Senate honoured him as "Augustus" (the respected one) in 27 BC. His clemency to defeated soldiers allowed Rome to unite after civil war. Rome was now effectively ruled by one man — the first emperor.',explanation:'Actium ended 100 years of civil war and established the imperial system that would rule Rome for centuries.'},
+ 
+  // COMMEMORATION
+  {topic:'commemoration',paper:'p2',difficulty:'Foundation',marks:1,text:'What animal appears on the Actium relief in the Vatican Museum and what does it represent?',type:'mcq',options:['An eagle — representing Jupiter\'s support','A crocodile — representing Egypt','A wolf — representing Rome\'s founding','A serpent — representing Cleopatra\'s death'],correct:1,explanation:'A crocodile appears near the front of the ship on the relief. It is a clear reference to Egypt and probably represents Octavian\'s victory as a triumph over the foreign enemy Cleopatra of Egypt, rather than the more embarrassing civil war against fellow Roman Mark Antony.'},
+  {topic:'commemoration',paper:'p2',difficulty:'Higher',marks:2,text:'Why might Octavian have wanted to frame the battle of Actium as a victory over Egypt rather than over Mark Antony?',type:'short',modelAnswer:'Victory over a foreign enemy (Cleopatra of Egypt) was far more glorious and appropriate to celebrate than victory over a fellow Roman in a civil war. A civil war victory would remind Romans of the divisions and suffering of the recent conflicts. By portraying Cleopatra as the real enemy — a foreign queen who threatened to take over Rome — Octavian could claim to have saved Rome from foreign conquest rather than having defeated his own countryman.',explanation:'This framing was crucial propaganda — it allowed Octavian to be celebrated as a national hero rather than as the winner of a Roman civil war.'},
+ 
+  // TRAJAN
+  {topic:'trajan',paper:'p2',difficulty:'Foundation',marks:1,text:'How tall is Trajan\'s Column?',type:'mcq',options:['15 metres','30 metres','50 metres','100 metres'],correct:1,explanation:'Trajan\'s Column stands approximately 30 metres tall (the marble column alone, not counting the 5-metre base). It is made of 19 marble drums each 3.7m in diameter, with a spiral frieze nearly 200 metres long depicting the Dacian campaigns.'},
+  {topic:'trajan',paper:'p2',difficulty:'Foundation',marks:1,text:'What is notably absent from the scenes depicted on Trajan\'s Column?',type:'mcq',options:['Images of Trajan himself','Any scenes showing Rome','Depictions of battle and violence','Images of the Roman fleet'],correct:2,explanation:'Trajan\'s Column famously shows very little actual violence or battle. Instead it focuses on the army\'s orderliness — marching, building camps, crossing rivers, performing sacrifices. Trajan is shown 57-60 times, always without his helmet so he is recognisable.'},
+  {topic:'trajan',paper:'p2',difficulty:'Higher',marks:3,text:'Explain three reasons why Trajan went to war against the Dacians.',type:'short',modelAnswer:'1. Decebalus was violating the peace agreement — he was allegedly building alliances with northern peoples, recruiting Roman soldiers and harbouring runaway slaves. 2. Trajan was unimpressed with the generous peace terms Domitian had given Decebalus and wanted to assert proper Roman authority. 3. As a new emperor, Trajan wanted a major military victory to secure the loyalty of soldiers on the northern frontier who had been loyal to Domitian. Additionally, Dacia\'s gold mines would fund Trajan\'s building projects in Rome.',explanation:'The reasons were a mix of genuine security concerns, wounded Roman pride, and the political need for a new emperor to prove himself militarily.'},
+  {topic:'trajan',paper:'p2',difficulty:'Higher',marks:2,text:'How does Trajan\'s Column portray the Dacians as victims of warfare?',type:'short',modelAnswer:'One scene shows Dacian women presenting their children to Roman soldiers while begging for mercy — showing the Romans as merciful and considerate conquerors. By contrast, another scene shows Dacian women torturing a captured Roman soldier, making the Dacians appear barbaric. This contrast justifies the Roman conquest as a civilising force bringing order to a savage people.',explanation:'The presentation of victims served Roman imperial ideology — making conquest seem humane and justified.'},
+ 
+  // PRESCRIBED VISUAL SOURCES
+  {topic:'sources',paper:'p2',difficulty:'Foundation',marks:1,text:'Where is the Lenormant Trireme Relief now located?',type:'mcq',options:['British Museum, London','National Museum of Scotland','Acropolis Museum, Athens','Vatican Museum, Rome'],correct:2,explanation:'The Lenormant Trireme Relief (c.410 BC) is now in the Acropolis Museum in Athens. It is one of very few surviving images of a Greek trireme and shows three banks of oars with the top row of rowers visible.'},
+  {topic:'sources',paper:'p2',difficulty:'Foundation',marks:1,text:'What was the significance of the Corinthian helmet now in the British Museum?',type:'mcq',options:['It belonged to Leonidas','It was found in a Spartan royal tomb','It was dedicated to Zeus at Olympia as a thank-offering after battle','It was worn by the general who won the Battle of Salamis'],correct:2,explanation:'The Corinthian-style bronze helmet (c.460 BC) was dedicated to Zeus at his sanctuary at Olympia to thank him for victory in battle and the soldier\'s survival. This was a common practice — dedicating captured or personal armour to the gods.'},
+  {topic:'sources',paper:'p2',difficulty:'Higher',marks:2,text:'What does the Red Figure Kylix by the Triptolemos Painter tell us about how the Athenians viewed their victory over the Persians?',type:'short',modelAnswer:'The kylix shows a Greek hoplite standing dominant over a fallen Persian, sword ready to strike. The Greek is shown naked apart from armour (emphasising physical strength and heroism), while the Persian wears full body "pyjama-style" clothing. Appearing on a household drinking cup, it shows how the victory was part of everyday Athenian cultural identity — not just a military event but a source of national pride celebrated in domestic life.',explanation:'The choice of a drinking cup (kylix) is significant — it means images of Greek superiority were seen at social gatherings, constantly reinforcing Athenian identity.'},
+];
+ 
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let currentPaper = 'p1';
+let state = {
+  session:0, totalAnswered:0, streak:0, bestStreak:0,
+  performance: {}
+};
+ 
+// Init performance tracking
+[...Object.keys(P1_TOPICS),...Object.keys(P2_TOPICS)].forEach(k=>{
+  state.performance[k]={correct:0,total:0};
+});
+ 
+let quiz = { questions:[], idx:0, topicScores:{}, paper:'p1' };
+let currentQ = null;
+let answered = false;
+ 
+// ══════════════════════════════════════════
+// QUIZ LOGIC
+// ══════════════════════════════════════════
+function selectPaper(paper, btn) {
+  currentPaper = paper;
+  document.querySelectorAll('.paper-tab').forEach(b => b.className = 'paper-tab');
+  btn.className = `paper-tab active-${paper}`;
+  // Update btn-start colors
+  const btnStart = document.getElementById('btn-start-all');
+  btnStart.className = `btn btn-${paper}`;
+  renderTopicGrid();
+  if(document.getElementById('section-mastery').style.display !== 'none') renderMastery();
+}
+ 
+function getTopics() { return currentPaper==='p1' ? P1_TOPICS : P2_TOPICS; }
+function getQuestions() { return currentPaper==='p1' ? P1_QUESTIONS : P2_QUESTIONS; }
+ 
+function startQuiz(mode) {
+  const allQ = getQuestions();
+  let pool = [...allQ];
+ 
+  if(mode==='weak') {
+    const weak = Object.entries(state.performance)
+      .filter(([t,p])=>p.total>=1 && p.correct/p.total<0.6)
+      .map(([t])=>t);
+    pool = allQ.filter(q=>weak.includes(q.topic));
+    if(pool.length===0) pool=[...allQ];
+  }
+ 
+  // Shuffle
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  pool = pool.slice(0,12);
+ 
+  quiz = {questions:pool, idx:0, topicScores:{}, paper:currentPaper};
+  state.session=0;
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+ 
+function renderQuestion() {
+  if(quiz.idx>=quiz.questions.length){showResults();return;}
+  currentQ = quiz.questions[quiz.idx];
+  answered = false;
+ 
+  // Update header
+  const pct = (quiz.idx/quiz.questions.length)*100;
+  const fill = document.getElementById('progress-fill');
+  fill.style.width=pct+'%';
+  fill.className='progress-fill '+quiz.paper;
+ 
+  document.getElementById('q-count').textContent=`${quiz.idx+1}/${quiz.questions.length}`;
+  const topics = quiz.paper==='p1' ? P1_TOPICS : P2_TOPICS;
+  const tag = document.getElementById('topic-tag');
+  tag.textContent = topics[currentQ.topic]||currentQ.topic;
+  tag.className='topic-tag '+quiz.paper;
+ 
+  document.getElementById('q-difficulty').textContent = currentQ.difficulty;
+  document.getElementById('q-text').textContent = currentQ.text;
+  document.getElementById('q-marks').textContent = `[${currentQ.marks} mark${currentQ.marks>1?'s':''}]`;
+ 
+  // Reset UI
+  document.getElementById('feedback-bar').className='feedback-bar';
+  document.getElementById('answer-reveal').className='answer-reveal';
+  const aiEl = document.getElementById('ai-explanation');
+  aiEl.className='ai-explanation '+quiz.paper;
+  document.getElementById('ai-exp-text').innerHTML='<div class="ai-thinking"><span></span><span></span><span></span></div>';
+  document.getElementById('ai-exp-label').className='ai-exp-label '+quiz.paper;
+  document.getElementById('self-mark').className='self-mark';
+  document.getElementById('btn-explain').style.display='none';
+  document.getElementById('btn-next').style.display='none';
+ 
+  // Render options
+  const container = document.getElementById('options-container');
+  container.innerHTML='';
+  if(currentQ.type==='mcq'){
+    const letters=['A','B','C','D'];
+    currentQ.options.forEach((opt,i)=>{
+      const btn=document.createElement('button');
+      btn.className='opt';
+      btn.innerHTML=`<span class="opt-letter">${letters[i]}</span>${opt}`;
+      btn.onclick=()=>selectOption(i,btn);
+      container.appendChild(btn);
+    });
+  } else {
+    const ta=document.createElement('textarea');
+    ta.style.cssText='width:100%;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--radius);padding:0.8rem;color:var(--text);font-family:var(--body);font-size:15px;resize:vertical;min-height:80px;outline:none;';
+    ta.placeholder='Write your answer here…';
+    container.appendChild(ta);
+    const btn=document.createElement('button');
+    btn.className=`btn btn-${quiz.paper}`;
+    btn.style.marginTop='10px';
+    btn.textContent='Submit Answer';
+    btn.onclick=()=>submitShort();
+    container.appendChild(btn);
+  }
+}
+ 
+function selectOption(idx, btn) {
+  if(answered) return;
+  answered=true;
+  const opts = document.querySelectorAll('.opt');
+  opts.forEach(o=>{o.classList.add('locked');});
+ 
+  const isCorrect = idx===currentQ.correct;
+  btn.classList.add(isCorrect?'correct':'wrong');
+  if(!isCorrect) opts[currentQ.correct].classList.add('reveal-correct');
+ 
+  updateScore(isCorrect);
+  showFeedback(isCorrect);
+  document.getElementById('btn-explain').style.display='';
+  document.getElementById('btn-next').style.display='';
+  const nextBtn=document.getElementById('btn-next');
+  nextBtn.className=`btn btn-${quiz.paper}`;
+}
+ 
+function submitShort() {
+  if(answered) return;
+  answered=true;
+  document.getElementById('answer-reveal').classList.add('show');
+  document.getElementById('reveal-text').textContent=currentQ.modelAnswer;
+  document.getElementById('self-mark').className='self-mark show';
+  document.getElementById('btn-explain').style.display='';
+}
+ 
+function selfMark(correct) {
+  document.getElementById('self-mark').className='self-mark';
+  updateScore(correct);
+  showFeedback(correct);
+  document.getElementById('btn-next').style.display='';
+  document.getElementById('btn-next').className=`btn btn-${quiz.paper}`;
+}
+ 
+function updateScore(correct) {
+  const t=currentQ.topic;
+  if(!state.performance[t]) state.performance[t]={correct:0,total:0};
+  if(!quiz.topicScores[t]) quiz.topicScores[t]={correct:0,total:0};
+  state.performance[t].total++;
+  quiz.topicScores[t].total++;
+  state.totalAnswered++;
+  if(correct){
+    state.performance[t].correct++;
+    quiz.topicScores[t].correct++;
+    state.session++;
+    state.streak++;
+    if(state.streak>state.bestStreak) state.bestStreak=state.streak;
+  } else {
+    state.streak=0;
+  }
+  updateHeader();
+}
+ 
+function showFeedback(correct) {
+  const bar=document.getElementById('feedback-bar');
+  const icon=document.getElementById('feedback-icon');
+  const title=document.getElementById('feedback-title');
+  const msg=document.getElementById('feedback-msg');
+  bar.className='feedback-bar show';
+  if(correct){
+    icon.textContent='✓';
+    title.textContent='Correct!';
+    const streakMsg=state.streak>2?` ${state.streak} in a row!`:'';
+    msg.textContent=currentQ.explanation.substring(0,100)+'…'+streakMsg;
+  } else {
+    icon.textContent='✗';
+    title.textContent='Not quite.';
+    msg.textContent=currentQ.explanation.substring(0,120)+'…';
+  }
+}
+ 
+function getAIExplanation() {
+  const aiEl=document.getElementById('ai-explanation');
+  aiEl.className='ai-explanation show '+quiz.paper;
+  document.getElementById('ai-exp-text').innerHTML='<div class="ai-thinking"><span></span><span></span><span></span></div>';
+ 
+  const sysPrompt=`You are an expert OCR GCSE Classical Civilisation tutor specialising in both Paper 1 (Myth and Religion) and Paper 2 (War and Warfare) from Marylebone Boys' School. Answer clearly and concisely at GCSE level. Mention OCR mark scheme keywords. Keep answers under 120 words. Be encouraging. No markdown formatting — plain text only.`;
+  const userMsg=`Question: ${currentQ.text}\nThe correct answer/model answer is: ${currentQ.type==='mcq'?currentQ.options[currentQ.correct]:currentQ.modelAnswer}\nPlease explain why this is correct and what a student needs to remember for the exam about this topic.`;
+ 
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sysPrompt,messages:[{role:'user',content:userMsg}]})
+  }).then(r=>r.json()).then(d=>{
+    const text=d.content&&d.content[0]?d.content[0].text:'Could not get explanation.';
+    document.getElementById('ai-exp-text').textContent=text;
+  }).catch(()=>{
+    document.getElementById('ai-exp-text').textContent='Connection error — check your internet connection.';
+  });
+}
+ 
+function nextQuestion() {
+  quiz.idx++;
+  renderQuestion();
+}
+ 
+// ══════════════════════════════════════════
+// RESULTS
+// ══════════════════════════════════════════
+function showResults() {
+  const total=quiz.questions.length;
+  const correct=quiz.questions.reduce((acc,q)=>{
+    const s=quiz.topicScores[q.topic];
+    return acc;
+  },0);
+  // Count correctly answered
+  let corr=0;
+  Object.values(quiz.topicScores).forEach(s=>corr+=s.correct);
+  const pct=Math.round((corr/total)*100);
+ 
+  const badge=document.getElementById('paper-result-badge');
+  badge.className=`paper-badge ${quiz.paper}`;
+  badge.textContent=quiz.paper==='p1'?'Paper 1 — Myth & Religion':'Paper 2 — War & Warfare';
+ 
+  const gradeBadge=document.getElementById('grade-badge');
+  let grade,gradeColor;
+  if(pct>=87){grade='9';gradeColor='var(--p1)';}
+  else if(pct>=78){grade='8';gradeColor='var(--p1)';}
+  else if(pct>=69){grade='7';gradeColor='#7aaa8a';}
+  else if(pct>=61){grade='6';gradeColor='#7aaa8a';}
+  else if(pct>=53){grade='5';gradeColor='#aaa87a';}
+  else if(pct>=45){grade='4';gradeColor='var(--amber)';}
+  else if(pct>=34){grade='3';gradeColor='var(--red)';}
+  else{grade='U';gradeColor='var(--red)';}
+ 
+  gradeBadge.textContent=grade;
+  gradeBadge.style.borderColor=gradeColor;
+  gradeBadge.style.color=gradeColor;
+ 
+  document.getElementById('results-title').textContent=pct>=70?'Excellent work!':pct>=50?'Good effort!':'Keep practising!';
+  document.getElementById('results-sub').textContent=`You scored ${pct}% — Grade ${grade} territory`;
+  document.getElementById('res-correct').textContent=`${corr}/${total}`;
+  document.getElementById('res-pct').textContent=pct+'%';
+  document.getElementById('res-streak').textContent=state.bestStreak;
+ 
+  const topics = quiz.paper==='p1'?P1_TOPICS:P2_TOPICS;
+  const breakdown=document.getElementById('topic-breakdown');
+  breakdown.innerHTML='';
+  [...new Set(quiz.questions.map(q=>q.topic))].forEach(t=>{
+    const s=quiz.topicScores[t];if(!s||s.total===0)return;
+    const tp=Math.round((s.correct/s.total)*100);
+    const col=tp>=70?'var(--green)':tp>=50?'var(--amber)':'var(--red)';
+    const row=document.createElement('div');row.className='topic-result';
+    row.innerHTML=`<div class="topic-result-name">${topics[t]||t}</div><div class="topic-result-bar"><div class="topic-result-fill" style="width:${tp}%;background:${col}"></div></div><div class="topic-result-pct" style="color:${col}">${tp}%</div>`;
+    breakdown.appendChild(row);
+  });
+ 
+  const wt=Object.entries(state.performance).filter(([t,p])=>p.total>=2&&p.correct/p.total<0.55).map(([t])=>(topics[t]||t));
+  const wn=document.getElementById('weak-notice');
+  if(wt.length>0){wn.style.display='';document.getElementById('weak-notice-text').textContent=`Focus on: ${wt.join(', ')}. Use "Drill Weak Areas" to target these next.`;}
+  else{wn.style.display='none';}
+ 
+  document.getElementById('btn-again').className=`btn btn-${quiz.paper}`;
+  showScreen('screen-results');
+}
+ 
+// ══════════════════════════════════════════
+// HOME / MASTERY / TOPICS
+// ══════════════════════════════════════════
+function renderTopicGrid() {
+  const grid=document.getElementById('topic-grid');grid.innerHTML='';
+  const topics=getTopics();
+  const paper=currentPaper;
+  Object.entries(topics).forEach(([key,name])=>{
+    const p=state.performance[key]||{correct:0,total:0};
+    const mastery=p.total>0?p.correct/p.total:null;
+    const pct=mastery!==null?Math.round(mastery*100):0;
+    const color=mastery===null?'var(--surface3)':mastery>=0.75?'var(--green)':mastery>=0.5?'var(--amber)':'var(--red)';
+    const cls=mastery===null?'':mastery>=0.7?'strong':mastery<0.5&&p.total>0?'weak':'';
+    const card=document.createElement('div');
+    card.className=`topic-card ${paper}-card ${cls}`;
+    card.innerHTML=`<div class="topic-name">${name}</div><div class="topic-bar"><div class="topic-bar-fill" style="width:${pct}%;background:${color}"></div></div><div class="topic-meta">${p.total>0?`${pct}% · ${p.total} answered`:'Not attempted'}</div>`;
+    card.onclick=()=>startQuizTopic(key);
+    grid.appendChild(card);
+  });
+}
+ 
+function startQuizTopic(topicKey) {
+  const allQ = getQuestions().filter(q=>q.topic===topicKey);
+  if(allQ.length===0) return;
+  for(let i=allQ.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[allQ[i],allQ[j]]=[allQ[j],allQ[i]];}
+  quiz={questions:allQ.slice(0,8),idx:0,topicScores:{},paper:currentPaper};
+  state.session=0;
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+ 
+function renderMastery() {
+  const grid=document.getElementById('mastery-grid');grid.innerHTML='';
+  const topics=getTopics();
+  Object.entries(topics).forEach(([key,name])=>{
+    const p=state.performance[key]||{correct:0,total:0};
+    const mastery=p.total>0?p.correct/p.total:0;
+    const pct=Math.round(mastery*100);
+    const color=mastery>=0.8?'var(--green)':mastery>=0.55?'var(--amber)':'var(--red)';
+    const stars=mastery>=0.85?'★★★':mastery>=0.65?'★★☆':mastery>=0.4?'★☆☆':'☆☆☆';
+    const row=document.createElement('div');row.className='mastery-row';
+    row.innerHTML=`<div><div class="mastery-name">${name}</div><div class="mastery-sub">${p.total} answered</div></div><div class="mastery-bar"><div class="mastery-fill" style="width:${pct}%;background:${color}"></div></div><div class="mastery-stars ${mastery>=0.85?'mastered':''}">${stars}</div>`;
+    grid.appendChild(row);
+  });
+}
+ 
+function showSection(name,e) {
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(e&&e.target)e.target.classList.add('active');
+  document.getElementById('section-topics').style.display=name==='topics'?'':'none';
+  document.getElementById('section-mastery').style.display=name==='mastery'?'':'none';
+  if(name==='mastery')renderMastery();
+}
+ 
+function updateHeader(){document.getElementById('hdr-session').textContent=state.session;document.getElementById('hdr-total').textContent=state.totalAnswered;document.getElementById('hdr-streak').textContent=state.streak;}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function goHome(){renderTopicGrid();showScreen('screen-home');}
+ 
+// ══════════════════════════════════════════
+// AI CHATBOT
+// ══════════════════════════════════════════
+let chatOpen=false, chatHistory=[];
+ 
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chat-window').classList.toggle('open',chatOpen);
+  document.getElementById('chat-fab').textContent=chatOpen?'✕':'⚡';
+  if(chatOpen)document.getElementById('chat-input').focus();
+}
+ 
+function sendSuggestion(el){
+  document.getElementById('chat-input').value=el.textContent;
+  document.getElementById('chat-suggestions').style.display='none';
+  sendChat();
+}
+ 
+async function sendChat(){
+  const inp=document.getElementById('chat-input');
+  const text=inp.value.trim();if(!text)return;
+  inp.value='';
+  appendMsg(text,'user');
+  chatHistory.push({role:'user',content:text});
+  const thinking=appendThinking();
+ 
+  const sys=`You are an expert OCR GCSE Classical Civilisation tutor from Marylebone Boys' School, specialising in both Paper 1 (Myth and Religion: J199/21) and Paper 2 (War and Warfare: J199/22). You know the prescribed sources, set texts and mark schemes inside out. Answer clearly at GCSE level. Mention key terms and OCR mark scheme vocabulary. Keep answers under 150 words. Be encouraging. No markdown — plain text only.`;
+ 
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sys,messages:chatHistory.slice(-10)})});
+    const d=await r.json();
+    const resp=d.content&&d.content[0]?d.content[0].text:'Sorry, I couldn\'t get a response.';
+    thinking.remove();
+    appendMsg(resp,'ai');
+    chatHistory.push({role:'assistant',content:resp});
+  }catch(e){thinking.remove();appendMsg('Connection error.','ai');}
+}
+ 
+function appendMsg(text,role){
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');div.className=`msg msg-${role}`;div.textContent=text;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;return div;
+}
+ 
+function appendThinking(){
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');div.className='msg msg-thinking';
+  div.innerHTML='<div class="ai-thinking"><span></span><span></span><span></span></div>';
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;return div;
+}
+ 
+// INIT
+updateHeader();
+renderTopicGrid();
+</script>
+</body>
+</html>
