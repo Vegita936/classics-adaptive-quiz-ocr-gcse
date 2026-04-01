@@ -1,0 +1,8 @@
+if(pct>=87){grade='9';gradeColor='var(--p1)';}
+  else if(pct>=78){grade='8';gradeColor='var(--p1)';}
+  else if(pct>=69){grade='7';gradeColor='#7aaa8a';}
+  else if(pct>=61){grade='6';gradeColor='#7aaa8a';}
+  else if(pct>=53){grade='5';gradeColor='#aaa87a';}
+  else if(pct>=45){grade='4';gradeColor='var(--amber)';}
+  else if(pct>=34){grade='3';gradeColor='var(--red)';}
+  else{grade='U';gradeColor='var(--red)';}
